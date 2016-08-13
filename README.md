@@ -26,6 +26,7 @@ Currently, at least the following features are missing:
 
 * Running tweens outside play mode
 * Using mathematical functions instead of manually drawn curves
+* Setting Rect Transform values.
 
 # License
 

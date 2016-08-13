@@ -1,6 +1,8 @@
 # UpTween
 A simple Unity tweening library for both the UI and ordinary objects.
 
+![alt tag](http://i.imgur.com/kt8RMyN.png)
+
 # Features
 
 * **Additive tweening** - Instead of setting where to tween an object, you can set how much to tween an object. You can also set absolute, non-relative targets if you wish to.

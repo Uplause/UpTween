@@ -8,6 +8,7 @@
 
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Events;
 
 [System.Serializable]
 public class UpTweenTransformation
@@ -53,16 +54,34 @@ public class UpTween : MonoBehaviour {
     public UpTweenTransformation end;
 
     public AnimationCurve curve = AnimationCurve.Linear(0.0f, 0.0f, 1.0f, 1.0f);
-    
+
     public float duration = 1.0f;
 
     public bool additive = true;
 
-    public enum LOOP { NONE = 0, ONCE = 1, FOREVER = 2}
+    public enum LOOP { NONE = 0, ONCE = 1, FOREVER = 2 }
     public LOOP loop = LOOP.NONE;
     public bool pingpong = true;
 
     public bool play_at_start = false;
+
+    [System.Serializable]
+    public class Events
+    {
+
+        [System.Serializable]
+        public class StartEvent : UnityEvent<UpTween> { };
+        public StartEvent start_event;
+
+        [System.Serializable]
+        public class UpdateEvent : UnityEvent<UpTween> { };
+        public UpdateEvent update_event;
+
+        [System.Serializable]
+        public class EndEvent : UnityEvent<UpTween> { };
+        public EndEvent end_event;
+    }
+    public Events events;
 
     [InspectorButton("CopyStart")]
     public bool copy_start;
@@ -85,6 +104,9 @@ public class UpTween : MonoBehaviour {
     [InspectorButton("Continue")]
     public bool continue_tween;
 
+    [HideInInspector]
+    public float time = 0.0f;
+
     // Original transformation
     Vector3 o_pos;
     Vector3 o_rot;
@@ -92,11 +114,11 @@ public class UpTween : MonoBehaviour {
 
     bool active = false;
     int direction = -1;
-    float time = 0.0f;
     int loop_times = 0;
 
     public void PlayFromStart()
     {
+        events.start_event.Invoke(this);
         Play(true);
     }
 
@@ -268,12 +290,17 @@ public class UpTween : MonoBehaviour {
     {
         time += Time.deltaTime;
 
+        events.update_event.Invoke(this);
+
         if (time > duration)
         {
             time = duration;
 
             if (loop == LOOP.NONE || (loop == LOOP.ONCE && loop_times > 0))
+            {
+                events.end_event.Invoke(this);
                 active = false;
+            }
             else
             {
                 loop_times++;

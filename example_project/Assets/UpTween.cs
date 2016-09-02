@@ -10,38 +10,6 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.Events;
 
-[System.Serializable]
-public class UpTweenTransformation
-{
-    public GameObject target;
-    public Vector3 pos;
-    public Vector3 scale;
-    public Vector3 rotation;
-
-    public Vector3 GetPos()
-    {
-        if (target)
-            return target.transform.position;
-        else
-            return pos;
-    }
-
-    public Vector3 GetRot()
-    {
-        if (target)
-            return target.transform.rotation.eulerAngles;
-        else
-            return rotation;
-    }
-
-    public Vector3 GetScale()
-    {
-        if (target)
-            return target.transform.localScale;
-        else
-            return scale;
-    }
-}
 
 public class UpTween : MonoBehaviour {
     public Transform target;
@@ -107,11 +75,6 @@ public class UpTween : MonoBehaviour {
     [HideInInspector]
     public float time = 0.0f;
 
-    // Original transformation
-    Vector3 o_pos;
-    Vector3 o_rot;
-    Vector3 o_scale;
-
     bool active = false;
     int direction = -1;
     int loop_times = 0;
@@ -153,87 +116,48 @@ public class UpTween : MonoBehaviour {
     {
         if (!target)
             target = transform;
+        if (!start.parent)
+            start.parent = this;
 
-        if (enable_position)
-        {
-            start.pos.x = target.position.x;
-            start.pos.y = target.position.y;
-            start.pos.z = target.position.z;
-        }
-        if (enable_rotation)
-        {
-            start.rotation.x = target.eulerAngles.x;
-            start.rotation.y = target.eulerAngles.y;
-            start.rotation.z = target.eulerAngles.z;
-        }
-        if (enable_scale)
-        {
-            start.scale.x = target.localScale.x;
-            start.scale.y = target.localScale.y;
-            start.scale.z = target.localScale.z;
-        }
+        start.CopyStart();
     }
 
     public void CopyEnd()
     {
         if (!target)
             target = transform;
+        if (!end.parent)
+            end.parent = this;
 
-        if (enable_position)
-        {
-            end.pos.x = target.position.x;
-            end.pos.y = target.position.y;
-            end.pos.z = target.position.z;
-        }
-        if (enable_rotation)
-        {
-            end.rotation.x = target.eulerAngles.x;
-            end.rotation.y = target.eulerAngles.y;
-            end.rotation.z = target.eulerAngles.z;
-        }
-        if (enable_scale)
-        {
-            end.scale.x = target.localScale.x;
-            end.scale.y = target.localScale.y;
-            end.scale.z = target.localScale.z;
-        }
+        end.CopyStart();
     }
 
     public void SetToStart()
     {
-        if (enable_position)
-        {
-            print(start.GetPos().x);
-            target.position = new Vector3(start.GetPos().x, start.GetPos().y, start.GetPos().z);
-        }
-        if (enable_rotation)
-        {
-            target.rotation = Quaternion.Euler(start.GetRot().x, start.GetRot().y, start.GetRot().z);
-        }
-        if (enable_scale)
-        {
-            target.localScale = new Vector3(start.GetScale().x, start.GetScale().y, start.GetScale().z);
-        }
+        if (!target)
+            target = transform;
+        if (!start.parent)
+            start.parent = this;
+
+        start.SetToStart();
     }
 
     public void SetToEnd()
     {
-        if (enable_position)
-        {
-            target.position = new Vector3(end.GetPos().x, end.GetPos().y, end.GetPos().z);
-        }
-        if (enable_rotation)
-        {
-            target.rotation = Quaternion.Euler(end.GetRot().x, end.GetRot().y, end.GetRot().z);
-        }
-        if (enable_scale)
-        {
-            target.localScale = new Vector3(end.GetScale().x, end.GetScale().y, end.GetScale().z);
-        }
+        if (!target)
+            target = transform;
+        if (!end.parent)
+            end.parent = this;
+
+        end.SetToStart();
     }
 
     // Use this for initialization
     void Start () {
+        // Init
+        start.parent = this;
+        end.parent = this;
+
         time = 0.0f;
         loop_times = 0;
         active = false;
@@ -242,9 +166,12 @@ public class UpTween : MonoBehaviour {
         if (!target)
             target = transform;
 
-        o_pos = new Vector3(target.position.x, target.position.y, target.position.z);
-        o_rot = new Vector3(target.rotation.eulerAngles.x, target.rotation.eulerAngles.y, target.rotation.eulerAngles.z);
-        o_scale = new Vector3(target.localScale.x, target.localScale.y, target.localScale.z);
+        if (start.parent)
+            start.parent = this;
+        start.SetOriginalPositions();
+        if (end.parent)
+            end.parent = this;
+        end.SetOriginalPositions();
 
         if (play_at_start)
             Play();
@@ -267,23 +194,7 @@ public class UpTween : MonoBehaviour {
 
         float animation_time = curve.Evaluate(normalized_time);
 
-        Vector3 origin_pos = new Vector3(0,0,0);
-        Vector3 origin_rot = Vector3.zero;
-        Vector3 origin_scale = Vector3.zero;
-        
-        if (additive)
-        {
-            origin_pos = new Vector3(o_pos.x, o_pos.y, o_pos.z);
-            origin_rot = new Vector3(o_rot.x, o_rot.y, o_rot.z);
-            origin_scale = new Vector3(o_scale.x, o_scale.y, o_scale.z);
-        }
-
-        if (enable_position)
-            target.position = origin_pos + start.GetPos() + (end.GetPos() - start.GetPos()) * animation_time;
-        if (enable_rotation)
-            target.rotation = Quaternion.Euler(origin_rot + start.GetRot() + (end.GetRot() - start.GetRot()) * animation_time);
-        if (enable_scale)
-            target.localScale = origin_scale + start.GetScale() + (end.GetScale() - start.GetScale()) * animation_time;
+        UpTweenTransformation.Update(this, start, end, animation_time);
     }
 
     void UpdateTime()

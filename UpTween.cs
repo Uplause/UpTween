@@ -14,12 +14,12 @@ using UnityEngine.Events;
 public class UpTween : MonoBehaviour {
     public Transform target;
 
-    public bool enable_position = true;
-    public bool enable_scale;
-    public bool enable_rotation;
+    public enum Type { TRANSFORM, RECT_TRANSFORM, MATERIAL_COLOR, DYNAMIC}
+    public Type type;
 
-    public UpTweenTransformation start;
-    public UpTweenTransformation end;
+    public UpTweenTransformValues[] transform_values = new UpTweenTransformValues[2];
+    public UpTweenRectTransformValues[] rect_transform_values = new UpTweenRectTransformValues[2];
+    public UpTweenMaterialColorValues[] material_color_values = new UpTweenMaterialColorValues[2];
 
     public AnimationCurve curve = AnimationCurve.Linear(0.0f, 0.0f, 1.0f, 1.0f);
 
@@ -116,47 +116,97 @@ public class UpTween : MonoBehaviour {
     {
         if (!target)
             target = transform;
-        if (!start.parent)
-            start.parent = this;
 
-        start.CopyStart();
+        if (!transform_values[0].parent)
+            transform_values[0].parent = this;
+        transform_values[0].CopyStart();
+
+        if (!rect_transform_values[0].parent)
+            rect_transform_values[0].parent = this;
+        rect_transform_values[0].CopyStart();
+
+        if (!material_color_values[0].parent)
+            material_color_values[0].parent = this;
+        material_color_values[0].CopyStart();
     }
 
     public void CopyEnd()
     {
         if (!target)
             target = transform;
-        if (!end.parent)
-            end.parent = this;
 
-        end.CopyStart();
+        if (!transform_values[transform_values.Length - 1].parent)
+            transform_values[transform_values.Length - 1].parent = this;
+        transform_values[transform_values.Length - 1].CopyStart();
+
+        if (!rect_transform_values[rect_transform_values.Length - 1].parent)
+            rect_transform_values[rect_transform_values.Length - 1].parent = this;
+        rect_transform_values[rect_transform_values.Length - 1].CopyStart();
+
+        if (!material_color_values[material_color_values.Length - 1].parent)
+            material_color_values[material_color_values.Length - 1].parent = this;
+        material_color_values[material_color_values.Length - 1].CopyStart();
     }
 
     public void SetToStart()
     {
         if (!target)
             target = transform;
-        if (!start.parent)
-            start.parent = this;
 
-        start.SetToStart();
+        if (!transform_values[0].parent)
+            transform_values[0].parent = this;
+        transform_values[0].SetToStart();
+
+        if (!rect_transform_values[0].parent)
+            rect_transform_values[0].parent = this;
+        rect_transform_values[0].SetToStart();
+
+        if (!material_color_values[0].parent)
+            material_color_values[0].parent = this;
+        material_color_values[0].SetToStart();
     }
 
     public void SetToEnd()
     {
         if (!target)
             target = transform;
-        if (!end.parent)
-            end.parent = this;
 
-        end.SetToStart();
+        if (!transform_values[transform_values.Length - 1].parent)
+            transform_values[transform_values.Length - 1].parent = this;
+        transform_values[transform_values.Length - 1].SetToStart();
+
+        if (!rect_transform_values[rect_transform_values.Length - 1].parent)
+            rect_transform_values[rect_transform_values.Length - 1].parent = this;
+        rect_transform_values[rect_transform_values.Length - 1].SetToStart();
+
+        if (!material_color_values[rect_transform_values.Length - 1].parent)
+            material_color_values[rect_transform_values.Length - 1].parent = this;
+        material_color_values[rect_transform_values.Length - 1].SetToStart();
     }
 
     // Use this for initialization
     void Start () {
+        if (!target)
+            target = transform;
+
         // Init
-        start.parent = this;
-        end.parent = this;
+        foreach (var transform_value in transform_values)
+        {
+            transform_value.parent = this;
+            transform_value.SetOriginalPositions();
+        }
+
+        foreach (var rect_transform_value in rect_transform_values)
+        {
+            rect_transform_value.parent = this;
+            rect_transform_value.SetOriginalPositions();
+        }
+
+        foreach (var material_color_value in material_color_values)
+        {
+            material_color_value.parent = this;
+            material_color_value.SetOriginalPositions();
+        }
 
         time = 0.0f;
         loop_times = 0;
@@ -165,13 +215,6 @@ public class UpTween : MonoBehaviour {
 
         if (!target)
             target = transform;
-
-        if (start.parent)
-            start.parent = this;
-        start.SetOriginalPositions();
-        if (end.parent)
-            end.parent = this;
-        end.SetOriginalPositions();
 
         if (play_at_start)
             Play();
@@ -194,7 +237,12 @@ public class UpTween : MonoBehaviour {
 
         float animation_time = curve.Evaluate(normalized_time);
 
-        UpTweenTransformation.Update(this, start, end, animation_time);
+        if (type == Type.TRANSFORM)
+            transform_values[0].Update(this, transform_values[0], transform_values[1], animation_time);
+        else if (type == Type.RECT_TRANSFORM)
+            rect_transform_values[0].Update(this, rect_transform_values[0], rect_transform_values[1], animation_time);
+        else if (type == Type.MATERIAL_COLOR)
+            material_color_values[0].Update(this, material_color_values[0], material_color_values[1], animation_time);
     }
 
     void UpdateTime()

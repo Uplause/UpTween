@@ -33,6 +33,8 @@ public class UpTween : MonoBehaviour {
 
     public bool play_at_start = false;
 
+    private UpTweenAbstractValues[] values = new UpTweenAbstractValues[2];
+
     [System.Serializable]
     public class Events
     {
@@ -189,35 +191,29 @@ public class UpTween : MonoBehaviour {
         if (!target)
             target = transform;
 
-        // Init
-        foreach (var transform_value in transform_values)
-        {
-            transform_value.parent = this;
-            transform_value.SetOriginalPositions();
-        }
-
-        foreach (var rect_transform_value in rect_transform_values)
-        {
-            rect_transform_value.parent = this;
-            rect_transform_value.SetOriginalPositions();
-        }
-
-        foreach (var material_color_value in material_color_values)
-        {
-            material_color_value.parent = this;
-            material_color_value.SetOriginalPositions();
-        }
-
-        time = 0.0f;
-        loop_times = 0;
-        active = false;
-        direction = -1;
+        SetupValueArray();
 
         if (!target)
             target = transform;
 
         if (play_at_start)
             Play();
+    }
+
+    void SetupValueArray()
+    {
+        if (type == Type.TRANSFORM)
+            values = transform_values.Clone() as UpTweenAbstractValues[];
+        else if (type == Type.RECT_TRANSFORM)
+            values = rect_transform_values.Clone() as UpTweenAbstractValues[];
+        else if (type == Type.MATERIAL_COLOR)
+            values = material_color_values.Clone() as UpTweenAbstractValues[];
+
+        foreach (var value in values)
+        {
+            value.parent = this;
+            value.SetOriginalPositions();
+        }
     }
 	
 	// Update is called once per frame
@@ -237,12 +233,7 @@ public class UpTween : MonoBehaviour {
 
         float animation_time = curve.Evaluate(normalized_time);
 
-        if (type == Type.TRANSFORM)
-            transform_values[0].Update(this, transform_values[0], transform_values[1], animation_time);
-        else if (type == Type.RECT_TRANSFORM)
-            rect_transform_values[0].Update(this, rect_transform_values[0], rect_transform_values[1], animation_time);
-        else if (type == Type.MATERIAL_COLOR)
-            material_color_values[0].Update(this, material_color_values[0], material_color_values[1], animation_time);
+        values[0].Update(this, values[0], values[1], animation_time);
     }
 
     void UpdateTime()

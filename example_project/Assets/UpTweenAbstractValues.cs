@@ -5,6 +5,8 @@ public abstract class UpTweenAbstractValues {
     [HideInInspector]
     public UpTween parent;
 
+    public float duration = 1.0f;
+
     public abstract void SetToStart();
 
     public abstract void CopyStart();

@@ -23,8 +23,6 @@ public class UpTween : MonoBehaviour {
 
     public AnimationCurve curve = AnimationCurve.Linear(0.0f, 0.0f, 1.0f, 1.0f);
 
-    public float duration = 1.0f;
-
     public bool additive = true;
 
     public enum LOOP { NONE = 0, ONCE = 1, FOREVER = 2 }
@@ -78,8 +76,13 @@ public class UpTween : MonoBehaviour {
     public float time = 0.0f;
 
     bool active = false;
-    int direction = -1;
+
+    enum Direction { LEFT, RIGHT};
+    Direction direction = Direction.LEFT;
+
     int loop_times = 0;
+
+    int current_value = 0;
 
     public void PlayFromStart()
     {
@@ -90,13 +93,13 @@ public class UpTween : MonoBehaviour {
     public void Play(bool reset_loop_times = true)
     {
         active = true;
-        if (direction == -1)
-            direction = 1;
+        if (direction == Direction.LEFT)
+            direction = Direction.RIGHT;
         else
-            direction = -1;
+            direction = Direction.LEFT;
 
         if (!pingpong)
-            direction = 1;
+            direction = Direction.RIGHT;
 
         if (reset_loop_times)
             loop_times = 0;
@@ -227,13 +230,19 @@ public class UpTween : MonoBehaviour {
 
     void UpdateTransforms()
     {
-        float normalized_time = time / duration;
-        if (direction < 0)
+        float normalized_time = time / values[current_value].duration;
+        if (direction == Direction.LEFT)
             normalized_time = 1.0f - normalized_time;
+
+        if (normalized_time > 1.0f)
+            normalized_time = 1.0f;
 
         float animation_time = curve.Evaluate(normalized_time);
 
-        values[0].Update(this, values[0], values[1], animation_time);
+        if (direction == Direction.RIGHT)
+            values[0].Update(this, values[current_value], values[current_value+1], animation_time);
+        else
+            values[0].Update(this, values[current_value], values[current_value+1], animation_time);
     }
 
     void UpdateTime()
@@ -242,19 +251,29 @@ public class UpTween : MonoBehaviour {
 
         events.update_event.Invoke(this);
 
-        if (time > duration)
+        if (time > values[current_value].duration)
         {
-            time = duration;
+            time = values[current_value].duration;
 
-            if (loop == LOOP.NONE || (loop == LOOP.ONCE && loop_times > 0))
+            if ((direction == Direction.RIGHT && current_value >= values.Length - 2)
+                || (direction == Direction.LEFT && current_value <= 1))
             {
-                events.end_event.Invoke(this);
-                active = false;
+                print("Does it do this");
+                if (loop == LOOP.NONE || (loop == LOOP.ONCE && loop_times > 0))
+                {
+                    events.end_event.Invoke(this);
+                    active = false;
+                }
+                else
+                {
+                    loop_times++;
+                    Play(false);
+                }
             }
             else
             {
-                loop_times++;
-                Play(false);
+                time = 0.0f;
+                current_value++;
             }
         }
     }
